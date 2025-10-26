@@ -5,14 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 )
 
 // RateLimiterConfig defines limit and period
 type RateLimiterConfig struct {
-	Limit  int        
-	Period time.Duration 
+	Limit  int
+	Period time.Duration
 }
 
 // visitor holds the limiter for each client IP
@@ -59,22 +58,20 @@ func getVisitor(ip string, cfg RateLimiterConfig) *rate.Limiter {
 	return v.limiter
 }
 
-// NewRateLimiterMiddleware creates a Gin middleware with rate limiting
-func NewRateLimiterMiddleware(cfg RateLimiterConfig) gin.HandlerFunc {
+// RateLimiter is a middleware that provides rate limiting functionality.
+func RateLimiter(next http.Handler, cfg RateLimiterConfig) http.Handler {
 	// Start cleanup goroutine
 	go cleanupVisitors()
 
-	return func(c *gin.Context) {
-		ip := c.ClientIP()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := r.RemoteAddr // This will not be correct if behind a proxy
 		limiter := getVisitor(ip, cfg)
 
 		if !limiter.Allow() {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-				"error": "Rate limit exceeded. Try again later.",
-			})
+			http.Error(w, "Rate limit exceeded. Try again later.", http.StatusTooManyRequests)
 			return
 		}
 
-		c.Next()
-	}
+		next.ServeHTTP(w, r)
+	})
 }

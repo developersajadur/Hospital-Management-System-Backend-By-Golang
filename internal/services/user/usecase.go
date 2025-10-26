@@ -11,6 +11,7 @@ import (
 type Usecase interface {
 	Register(req *RegisterRequest) (*User, error)
 	Login(req *LoginRequest) (string, error)
+	GetUserById(id string) (*User, error)
 }
 
 type usecase struct {
@@ -67,4 +68,8 @@ func (u *usecase) Login(req *LoginRequest) (string, error) {
 	}
 
 	return token, nil
+}
+
+func (u *usecase) GetUserById(id string) (*User, error) {
+	return u.repo.FindByID(id)
 }

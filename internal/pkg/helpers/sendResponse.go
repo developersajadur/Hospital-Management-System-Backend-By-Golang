@@ -1,14 +1,13 @@
 package helpers
 
 import (
+	"encoding/json"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 type AppError struct {
-	Code    int
-	Message string
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 func (e *AppError) Error() string {
@@ -23,11 +22,11 @@ func NewAppError(code int, message string) *AppError {
 	}
 }
 
-
-
 // Success sends a standardized success response
-func Success(c *gin.Context, statusCode int, message string, data interface{}) {
-	c.JSON(statusCode, gin.H{
+func Success(w http.ResponseWriter, statusCode int, message string, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":    true,
 		"statusCode": statusCode,
 		"message":    message,
@@ -36,7 +35,7 @@ func Success(c *gin.Context, statusCode int, message string, data interface{}) {
 }
 
 // Error sends a standardized error response
-func Error(c *gin.Context, err error) {
+func Error(w http.ResponseWriter, err error) {
 	// Default to 500
 	status := http.StatusInternalServerError
 	msg := err.Error()
@@ -47,7 +46,9 @@ func Error(c *gin.Context, err error) {
 		msg = appErr.Message
 	}
 
-	c.JSON(status, gin.H{
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":    false,
 		"statusCode": status,
 		"message":    msg,
