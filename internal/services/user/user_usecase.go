@@ -62,7 +62,7 @@ func (u *usecase) Register(req *RegisterRequest) (*User, error) {
 			return err
 		}
 
-		// 4. Create role-specific profile only for doctor or patient
+		// 4. Create role-specific profile and attach to user object
 		switch req.Role {
 		case RoleDoctor:
 			if req.Doctor != nil {
@@ -75,10 +75,11 @@ func (u *usecase) Register(req *RegisterRequest) (*User, error) {
 					Status:         req.Doctor.Status,
 				}
 
-				_, err := u.doctorUC.CreateTx(tx, doctorReq)
+				createdDoctor, err := u.doctorUC.CreateTx(tx, doctorReq)
 				if err != nil {
 					return helpers.NewAppError(500, "Failed to create doctor profile: "+err.Error())
 				}
+				createdUser.Doctor = createdDoctor // Attach created doctor profile
 			}
 
 		case RolePatient:
@@ -91,10 +92,11 @@ func (u *usecase) Register(req *RegisterRequest) (*User, error) {
 					MedicalHistory: req.Patient.MedicalHistory,
 				}
 
-				_, err := u.patientUC.CreateTx(tx, patientReq)
+				createdPatient, err := u.patientUC.CreateTx(tx, patientReq)
 				if err != nil {
 					return helpers.NewAppError(500, "Failed to create patient profile: "+err.Error())
 				}
+				createdUser.Patient = createdPatient // Attach created patient profile
 			}
 
 		case RoleAdmin:
@@ -106,21 +108,6 @@ func (u *usecase) Register(req *RegisterRequest) (*User, error) {
 
 	if txErr != nil {
 		return nil, txErr
-	}
-
-	// 5. Preload role-specific data before returning
-	query := u.repo.(*repository).db
-	switch createdUser.Role {
-	case RoleDoctor:
-		query = query.Preload("Doctor")
-	case RolePatient:
-		query = query.Preload("Patient")
-	case RoleAdmin:
-		// Admin has no additional table, just return user
-	}
-
-	if err := query.First(&createdUser, "id = ?", createdUser.ID).Error; err != nil {
-		return nil, err
 	}
 
 	return createdUser, nil
