@@ -1,65 +1,85 @@
 package middlewares
 
 import (
-    "context"
-    "net/http"
-    "time"
-
-    "hospital_management_system/internal/pkg/helpers"
-    "hospital_management_system/internal/pkg/utils"
-    "hospital_management_system/internal/services/user"
+	"context"
+	"hospital_management_system/internal/pkg/helpers"
+	"hospital_management_system/internal/pkg/utils/jwt"
+	"net/http"
+	"time"
 )
 
 type contextKey string
 
 const UserContextKey = contextKey("user")
 
-func Auth(userUC user.Usecase, roles []string) func(http.Handler) http.Handler {
-    allowedRoles := make(map[string]bool)
-    for _, role := range roles {
-        allowedRoles[role] = true
-    }
+type User struct {
+	ID         string
+    Email string
+	Role       string
+	IsBlocked  bool
+	IsVerified bool
+	IsDeleted  bool
+}
 
-    return func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            token := r.Header.Get("Authorization")
-            if token == "" {
-                helpers.Error(w, helpers.NewAppError(http.StatusUnauthorized, "Missing token"))
-                return
-            }
+type UserFetcher interface {
+	GetUserByIdForAuth(id string) (*User, error)
+}
 
-            claims, err := utils.VerifyJWT(token)
-            if err != nil || claims == nil || time.Now().After(claims.ExpiresAt.Time) {
-                helpers.Error(w, helpers.NewAppError(http.StatusUnauthorized, "Invalid or expired token"))
-                return
-            }
+func Auth(userFetcher UserFetcher, roles []string) func(http.Handler) http.Handler {
 
-            u, err := userUC.GetUserById(claims.UserID)
-            if err != nil || u == nil {
-                helpers.Error(w, helpers.NewAppError(http.StatusNotFound, "User not found"))
-                return
-            }
+	allowedRoles := make(map[string]bool)
+	for _, r := range roles {
+		allowedRoles[r] = true
+	}
 
-            if u.IsDeleted {
-                helpers.Error(w, helpers.NewAppError(http.StatusNotFound, "User deleted"))
-                return
-            }
-            if u.IsBlocked {
-                helpers.Error(w, helpers.NewAppError(http.StatusForbidden, "User is blocked"))
-                return
-            }
-            if !u.IsVerified {
-                helpers.Error(w, helpers.NewAppError(http.StatusForbidden, "User is not verified"))
-                return
-            }
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-            if !allowedRoles[u.Role] {
-                helpers.Error(w, helpers.NewAppError(http.StatusForbidden, "Access denied"))
-                return
-            }
+			jwtUser, err := jwt.GetUserDataFromReqJWT(r)
+			if err != nil {
+				helpers.Error(w, helpers.NewAppError(http.StatusUnauthorized, ("Invalid token")))
+				return
+			}
 
-            ctx := context.WithValue(r.Context(), UserContextKey, u)
-            next.ServeHTTP(w, r.WithContext(ctx))
-        })
-    }
+			if time.Now().Unix() > jwtUser.Exp {
+				helpers.Error(w, helpers.NewAppError(http.StatusUnauthorized, ("Token has expired")))
+				return
+			}
+
+			user, err := userFetcher.GetUserByIdForAuth(jwtUser.UserID)
+			if err != nil || user == nil {
+				helpers.Error(w, helpers.NewAppError(http.StatusForbidden, ("User not found")))
+				return
+
+			}
+
+			if user.IsBlocked {
+				helpers.Error(w, helpers.NewAppError(http.StatusForbidden, ("User is blocked")))
+				return
+			}
+
+			// if !user.IsVerified {
+
+			// 	helpers.Error(w, helpers.NewAppError(http.StatusForbidden, ("User is not verified")))
+			// 	return
+			// }
+
+			if user.IsDeleted {
+
+				helpers.Error(w, helpers.NewAppError(http.StatusNotFound, ("User not found")))
+				return
+			}
+
+			// Role check
+			if !allowedRoles[user.Role] {
+
+				helpers.Error(w, helpers.NewAppError(http.StatusForbidden, ("Unauthorized: insufficient role")))
+				return
+			}
+
+			// Add user to context
+			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

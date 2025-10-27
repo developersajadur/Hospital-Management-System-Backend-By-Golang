@@ -4,16 +4,22 @@ import (
 	"log"
 	"os"
 
+	"hospital_management_system/internal/services/doctor"
+	"hospital_management_system/internal/services/patient"
 	"hospital_management_system/internal/services/user"
+
+	// "hospital_management_system/internal/services/patient"
+	// other services can be imported here
 
 	"gorm.io/gorm"
 )
 
 func Migration(DB *gorm.DB) {
+	// Important: migrate users first, because doctors reference users
 	err := DB.AutoMigrate(
-		&user.User{},
-		// &patient.Patient{},
-		// &doctor.Doctor{},
+		&user.User{},   // User table first
+		&doctor.Doctor{}, // Doctor table second
+		&patient.Patient{},
 		// &doctor.DoctorAvailability{},
 		// &doctor.DoctorSlot{},
 		// &room.Room{},
@@ -27,5 +33,6 @@ func Migration(DB *gorm.DB) {
 		log.Fatalf("Auto migration failed: %v", err)
 		os.Exit(1)
 	}
+
 	log.Println("Database migrated successfully")
 }

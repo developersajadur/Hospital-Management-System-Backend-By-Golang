@@ -1,16 +1,31 @@
-// router/router.go
 package router
 
 import (
-    "github.com/go-chi/chi/v5"
-    "hospital_management_system/internal/services/user"
-    "gorm.io/gorm"
+	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
+
+	"hospital_management_system/internal/services/doctor"
+	"hospital_management_system/internal/services/patient"
+	"hospital_management_system/internal/services/user"
 )
 
 func SetupRoutes(r chi.Router, db *gorm.DB) {
-    // Initialize domains and register their routes
+    // Doctor domain
+    doctorRepo := doctor.NewRepository(db)
+    doctorUsecase := doctor.NewUsecase(doctorRepo)
+    // doctorHandler := doctor.NewHandler(doctorUsecase)
+
+       // Doctor domain
+    patientRepo := patient.NewRepository(db)
+    patientUsecase := patient.NewUsecase(patientRepo)
+    // doctorHandler := doctor.NewHandler(doctorUsecase)
+
+    // User domain, inject doctor usecase
     userRepo := user.NewRepository(db)
-    userUsecase := user.NewUsecase(userRepo)
+    userUsecase := user.NewUsecase(userRepo, doctorUsecase, patientUsecase)
     userHandler := user.NewHandler(userUsecase)
-    user.RegisterRoutes(r, userHandler)
+
+    // Register routes
+    user.RegisterRoutes(r, userHandler, userUsecase)
+    // doctor.RegisterRoutes(r, doctorHandler, doctorUsecase)
 }
