@@ -6,9 +6,7 @@ import (
 
 	"hospital_management_system/internal/services/doctor"
 	"hospital_management_system/internal/services/patient"
-	userAPI "hospital_management_system/internal/services/user/handler"
-	userRepository "hospital_management_system/internal/services/user/repository"
-	userUsecase "hospital_management_system/internal/services/user/usecase"
+	"hospital_management_system/internal/services/user"
 )
 
 func SetupRoutes(r chi.Router, db *gorm.DB) {
@@ -23,11 +21,11 @@ func SetupRoutes(r chi.Router, db *gorm.DB) {
     // doctorHandler := doctor.NewHandler(doctorUsecase)
 
     // User domain, inject doctor usecase
-    userRepo := userRepository.NewRepository(db)
-    userUsecase := userUsecase.NewUsecase(userRepo, doctorUsecase, patientUsecase)
-    userHandler := userAPI.NewHandler(userUsecase)
+    userRepo := user.NewRepository(db)
+    userUsecase := user.NewUsecase(userRepo, doctorUsecase, patientUsecase)
+    userHandler := user.NewHandler(userUsecase)
 
     // Register routes
-    userAPI.RegisterRoutes(r, userHandler, userUsecase)
+    user.RegisterRoutes(r, userHandler, userUsecase)
     // doctor.RegisterRoutes(r, doctorHandler, doctorUsecase)
 }

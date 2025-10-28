@@ -6,7 +6,7 @@ import (
 
 	"hospital_management_system/internal/services/doctor"
 	"hospital_management_system/internal/services/patient"
-	userModel "hospital_management_system/internal/services/user/model"
+	"hospital_management_system/internal/services/user"
 
 	// "hospital_management_system/internal/services/patient"
 	// other services can be imported here
@@ -17,7 +17,7 @@ import (
 func Migration(DB *gorm.DB) {
 	// Important: migrate users first, because doctors reference users
 	err := DB.AutoMigrate(
-		&userModel.User{},   // User table first
+		&user.User{},   // User table first
 		&doctor.Doctor{}, // Doctor table second
 		&patient.Patient{},
 		// &doctor.DoctorAvailability{},

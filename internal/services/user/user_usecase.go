@@ -1,6 +1,4 @@
-
-
-package usecase
+package user
 
 import (
 	"hospital_management_system/internal/infra/middlewares"
@@ -8,8 +6,6 @@ import (
 	"hospital_management_system/internal/pkg/utils/jwt"
 	"hospital_management_system/internal/services/doctor"
 	"hospital_management_system/internal/services/patient"
-	"hospital_management_system/internal/services/user/model"
-	"hospital_management_system/internal/services/user/repository"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -17,29 +13,29 @@ import (
 )
 
 type Usecase interface {
-	Register(req *model.RegisterRequest) (*model.User, error)
-	Login(req *model.LoginRequest) (string, error)
+	Register(req *RegisterRequest) (*User, error)
+	Login(req *LoginRequest) (string, error)
 	GetUserByIdForAuth(id string) (*middlewares.User, error)
 }
 
 type usecase struct {
-	repo      repository.Repository
-	doctorUC  doctor.Usecase // inject doctor usecase
+	repo       Repository
+	doctorUC   doctor.Usecase // inject doctor usecase
 	patientUC patient.Usecase
 }
 
-func NewUsecase(repo repository.Repository, doctorUC doctor.Usecase, patientUC patient.Usecase) Usecase {
+func NewUsecase(repo Repository, doctorUC doctor.Usecase, patientUC patient.Usecase) Usecase {
 	return &usecase{
-		repo:      repo,
-		doctorUC:  doctorUC,
+		repo:     repo,
+		doctorUC: doctorUC,
 		patientUC: patientUC,
 	}
 }
 
-func (u *usecase) Register(req *model.RegisterRequest) (*model.User, error) {
-	var createdUser *model.User
+func (u *usecase) Register(req *RegisterRequest) (*User, error) {
+	var createdUser *User
 
-	txErr := u.repo.DB().Transaction(func(tx *gorm.DB) error {
+	txErr := u.repo.(*repository).db.Transaction(func(tx *gorm.DB) error {
 		// 1. Check existing user
 		existing, _ := u.repo.FindByEmailTx(tx, req.Email)
 		if existing != nil {
@@ -53,7 +49,7 @@ func (u *usecase) Register(req *model.RegisterRequest) (*model.User, error) {
 		}
 
 		// 3. Create user
-		user := &model.User{
+		user := &User{
 			Name:     req.Name,
 			Email:    req.Email,
 			Phone:    req.Phone,
@@ -68,7 +64,7 @@ func (u *usecase) Register(req *model.RegisterRequest) (*model.User, error) {
 
 		// 4. Create role-specific profile and attach to user object
 		switch req.Role {
-		case model.RoleDoctor:
+		case RoleDoctor:
 			if req.Doctor != nil {
 				doctorReq := &doctor.DoctorCreateRequest{
 					UserID:         createdUser.ID.String(),
@@ -86,13 +82,13 @@ func (u *usecase) Register(req *model.RegisterRequest) (*model.User, error) {
 				createdUser.Doctor = createdDoctor // Attach created doctor profile
 			}
 
-		case model.RolePatient:
+		case RolePatient:
 			if req.Patient != nil {
 				patientReq := &patient.PatientCreateRequest{
-					UserID:         createdUser.ID.String(),
-					Age:            req.Patient.Age,
-					Gender:         req.Patient.Gender,
-					Address:        req.Patient.Address,
+					UserID:        createdUser.ID.String(),
+					Age:           req.Patient.Age,
+					Gender:        req.Patient.Gender,
+					Address:       req.Patient.Address,
 					MedicalHistory: req.Patient.MedicalHistory,
 				}
 
@@ -103,7 +99,7 @@ func (u *usecase) Register(req *model.RegisterRequest) (*model.User, error) {
 				createdUser.Patient = createdPatient // Attach created patient profile
 			}
 
-		case model.RoleAdmin:
+		case RoleAdmin:
 			// Admin does not need any additional table, only user
 		}
 
@@ -117,7 +113,8 @@ func (u *usecase) Register(req *model.RegisterRequest) (*model.User, error) {
 	return createdUser, nil
 }
 
-func (u *usecase) Login(req *model.LoginRequest) (string, error) {
+
+func (u *usecase) Login(req *LoginRequest) (string, error) {
 	user, err := u.repo.FindByEmail(req.Email)
 	if err != nil || user == nil {
 		return "", helpers.NewAppError(406, "You have given a wrong email or password!")
@@ -151,7 +148,7 @@ func (u *usecase) GetUserByIdForAuth(id string) (*middlewares.User, error) {
 
 	return &middlewares.User{
 		ID:         user.ID.String(),
-		Email:      user.Email,
+		Email: user.Email,
 		Role:       user.Role,
 		IsBlocked:  user.IsBlocked,
 		IsVerified: user.IsVerified,
