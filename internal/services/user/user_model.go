@@ -1,4 +1,4 @@
-package user
+package model
 
 import (
 	"hospital_management_system/internal/services/doctor"

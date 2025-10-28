@@ -1,7 +1,10 @@
-package user
+
+package handler
 
 import (
 	"hospital_management_system/internal/infra/middlewares"
+	"hospital_management_system/internal/services/user/model"
+	"hospital_management_system/internal/services/user/usecase"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -12,7 +15,7 @@ const (
 	profileRoute  = "/profile"
 )
 
-func RegisterRoutes(r chi.Router, handler *Handler, userUC Usecase) {
+func RegisterRoutes(r chi.Router, handler *Handler, userUC usecase.Usecase) {
 	const userRoutePrefix = "/users"
 
 	r.Route(userRoutePrefix, func(r chi.Router) {
@@ -23,13 +26,13 @@ func RegisterRoutes(r chi.Router, handler *Handler, userUC Usecase) {
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			// Any authenticated user can access profile
-			r.Use(middlewares.Auth(userUC, []string{RoleAdmin, RoleDoctor, RolePatient}))
+			r.Use(middlewares.Auth(userUC, []string{model.RoleAdmin, model.RoleDoctor, model.RolePatient}))
 			r.Get(profileRoute, handler.GetProfile)
 		})
 
 		// Admin-only routes for creating admin/doctor accounts
 		r.Group(func(r chi.Router) {
-			r.Use(middlewares.Auth(userUC, []string{RoleAdmin}))
+			r.Use(middlewares.Auth(userUC, []string{model.RoleAdmin}))
 			r.Post("/register/admin", handler.Register)
 			r.Post("/register/doctor", handler.Register)
 		})
