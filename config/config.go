@@ -20,6 +20,8 @@ type Config struct {
 	EmailPort        string
 	EmailAppPassword string
 	Email            string
+	RabbitMqUrl      string
+	SendGridApiKey   string
 }
 
 var ENV *Config
@@ -56,5 +58,7 @@ func Init() {
 		EmailPort:        getEnv("EMAIL_PORT"),
 		EmailAppPassword: getEnv("EMAIL_APP_PASSWORD"),
 		Email:            getEnv("EMAIL"),
+		RabbitMqUrl:      getEnv("RABBITMQ_URL"),
+		SendGridApiKey:   getEnv("SENDGRID_API_KEY"),
 	}
 }

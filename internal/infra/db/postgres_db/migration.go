@@ -1,15 +1,9 @@
 package postgres_db
 
 import (
+	"hospital_management_system/internal/models"
 	"log"
 	"os"
-
-	"hospital_management_system/internal/services/doctor"
-	"hospital_management_system/internal/services/patient"
-	"hospital_management_system/internal/services/user"
-
-	// "hospital_management_system/internal/services/patient"
-	// other services can be imported here
 
 	"gorm.io/gorm"
 )
@@ -17,17 +11,17 @@ import (
 func Migration(DB *gorm.DB) {
 	// Important: migrate users first, because doctors reference users
 	err := DB.AutoMigrate(
-		&user.User{},   // User table first
-		&doctor.Doctor{}, // Doctor table second
-		&patient.Patient{},
+		&models.User{},   // User table first
+		&models.Doctor{}, // Doctor table second
+		&models.Patient{},
 		// &doctor.DoctorAvailability{},
 		// &doctor.DoctorSlot{},
 		// &room.Room{},
 		// &service_entity.Service{},
 		// &booking.Booking{},
 		// &payment.Payment{},
-		// &otp.OTP{},
-		// &email.Email{},
+		&models.OTP{},
+		&models.Email{},
 	)
 	if err != nil {
 		log.Fatalf("Auto migration failed: %v", err)
