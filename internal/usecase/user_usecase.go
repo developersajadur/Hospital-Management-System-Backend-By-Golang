@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"hospital_management_system/internal/dto"
-	"hospital_management_system/internal/infra/middlewares"
 	"hospital_management_system/internal/infra/repository"
 	"hospital_management_system/internal/models"
 	"hospital_management_system/internal/pkg/helpers"
@@ -16,7 +15,6 @@ import (
 type UserUsecase interface {
 	Register(req *dto.RegisterRequest) (*models.User, error)
 	Login(req *dto.LoginRequest) (string, error)
-	GetUserByIdForAuth(id string) (*middlewares.User, error)
 	FindByID(id string) (*models.User, error)   
 	FindByEmail(email string) (*models.User, error)
 }
@@ -137,21 +135,6 @@ func (u *userUsecase) Login(req *dto.LoginRequest) (string, error) {
 	return token, nil
 }
 
-func (u *userUsecase) GetUserByIdForAuth(id string) (*middlewares.User, error) {
-	user, err := u.repo.FindByID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &middlewares.User{
-		ID:         user.ID.String(),
-		Email: user.Email,
-		Role:       user.Role,
-		IsBlocked:  user.IsBlocked,
-		IsVerified: user.IsVerified,
-		IsDeleted:  user.IsDeleted,
-	}, nil
-}
 
 
 func (u *userUsecase) FindByID(id string) (*models.User, error) {

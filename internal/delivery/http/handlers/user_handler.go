@@ -108,7 +108,7 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userUc.GetUserByIdForAuth(jwtClaims.UserID)
+	user, err := h.userUc.FindByID(jwtClaims.UserID)
 	if err != nil {
 		helpers.Error(w, err)
 		return

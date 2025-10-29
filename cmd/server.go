@@ -30,6 +30,13 @@ func RunServer() {
 	// Initialize email repository
 	emailRepo := repository.EmailNewRepository(postgres_db.DB)
 
+	// Initialize RabbitMQ publisher
+	emailPublisher, err := rabbitmq.NewPublisher(config.ENV.RabbitMqUrl, "email_queue")
+	if err != nil {
+		log.Fatalf("Failed to create email publisher: %v", err)
+	}
+	defer emailPublisher.Close()
+
 	// Start RabbitMQ email consumer
 	emailPort, _ := strconv.Atoi(config.ENV.EmailPort)
 	go rabbitmq.StartConsumer(

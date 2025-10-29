@@ -14,6 +14,12 @@ import (
 )
 
 func SetupRoutes(r chi.Router, db *gorm.DB) {
+	// Initialize RabbitMQ publisher dependencies
+	publisher, err := rabbitmq.NewPublisher(config.ENV.RabbitMqUrl, "email_queue")
+	if err != nil {
+		log.Fatalf("Failed to create RabbitMQ publisher: %v", err)
+	}
+
 	// Initialize Doctor dependencies
 	doctorRepo := repository.DoctorNewRepository(db)
 	doctorUsecase := usecase.DoctorNewUsecase(doctorRepo)
@@ -34,14 +40,7 @@ func SetupRoutes(r chi.Router, db *gorm.DB) {
 
 	// Initialize OTP dependencies
 	otpRepo := repository.OtpNewRepository(db)
-	otpUsecase := usecase.OtpNewUsecase(otpRepo, emailUsecase, userUsecase)
-
-	// Initialize RabbitMQ publisher dependencies
-	publisher, err := rabbitmq.NewPublisher(config.ENV.RabbitMqUrl, "email_queue")
-	if err != nil {
-		log.Fatalf("Failed to create RabbitMQ publisher: %v", err)
-	}
-
+	otpUsecase := usecase.OtpNewUsecase(otpRepo, emailUsecase, userUsecase, publisher)
 
 	userHandler := handlers.UserNewHandler(userUsecase, otpUsecase, emailUsecase, publisher)
 	otpHandler := handlers.OtpNewHandler(otpUsecase)
