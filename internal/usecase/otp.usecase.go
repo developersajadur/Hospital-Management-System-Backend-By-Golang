@@ -10,13 +10,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // Usecase defines OTP business logic
 type OtpUsecase interface {
 	GenerateAndSaveOTP(email string, purpose string) (*models.OTP, error)
-	ValidateOTP(userID uuid.UUID, code string, purpose string) error
+	ValidateOTP(email string, code string) error
 }
 
 type otpUsecase struct {
@@ -88,19 +88,34 @@ func (u *otpUsecase) GenerateAndSaveOTP(email string, purpose string) (*models.O
 	return otp, nil
 }
 
-// ValidateOTP checks validity and marks as used
-func (u *otpUsecase) ValidateOTP(userID uuid.UUID, code string, purpose string) error {
-	otp, err := u.repo.GetOTPByCode(userID, code, purpose)
+// ValidateOTP checks validity, marks as used, and verifies user
+func (u *otpUsecase) ValidateOTP(email string, code string) error {
+	otp, err := u.repo.GetOTPByCodeAndEmail(email, code)
 	if err != nil {
 		return helpers.NewAppError(400, "Invalid OTP")
 	}
-
+	
 	if time.Now().After(otp.ExpiresAt) {
 		return helpers.NewAppError(400, "OTP expired")
 	}
 
-	if err := u.repo.MarkOTPUsed(otp.ID); err != nil {
-		return helpers.NewAppError(500, "Failed to mark OTP as used")
+	// Use transaction to ensure both operations succeed or fail together
+	err = u.repo.Transaction(func(tx *gorm.DB) error {
+		// Mark OTP as used
+		if err := u.repo.MarkOTPUsed(tx, otp.ID); err != nil {
+			return err
+		}
+
+		// Mark user as verified
+		if err := u.repo.MarkUserVerified(tx, email); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return helpers.NewAppError(500, "Failed to verify OTP")
 	}
 
 	return nil

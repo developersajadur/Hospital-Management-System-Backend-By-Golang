@@ -125,6 +125,9 @@ func (u *userUsecase) Login(req *dto.LoginRequest) (string, error) {
 	if user.IsDeleted {
 		return "", helpers.NewAppError(403, "User is deleted")
 	}
+		if !user.IsVerified {
+		return "", helpers.NewAppError(403, "User is not verify")
+	}
 
 	// Generate JWT token
 	token, err := jwt.GenerateJWT(user.ID.String(), user.Email, user.Role, 24*time.Hour)
