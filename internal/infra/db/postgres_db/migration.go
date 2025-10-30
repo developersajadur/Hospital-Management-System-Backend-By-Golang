@@ -22,6 +22,7 @@ func Migration(DB *gorm.DB) {
 		// &payment.Payment{},
 		&models.OTP{},
 		&models.Email{},
+		&models.Image{},
 	)
 	if err != nil {
 		log.Fatalf("Auto migration failed: %v", err)

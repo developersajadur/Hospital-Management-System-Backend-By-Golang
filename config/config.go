@@ -22,6 +22,9 @@ type Config struct {
 	Email            string
 	RabbitMqUrl      string
 	SendGridApiKey   string
+	CloudinaryCloudName string
+	CloudinaryApiKey string
+	CloudinaryApiSecret string
 }
 
 var ENV *Config
@@ -60,5 +63,9 @@ func Init() {
 		Email:            getEnv("EMAIL"),
 		RabbitMqUrl:      getEnv("RABBITMQ_URL"),
 		SendGridApiKey:   getEnv("SENDGRID_API_KEY"),
+		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME"),
+		CloudinaryApiKey: getEnv("CLOUDINARY_API_KEY"),
+		CloudinaryApiSecret: getEnv("CLOUDINARY_API_SECRET"),
+
 	}
 }
