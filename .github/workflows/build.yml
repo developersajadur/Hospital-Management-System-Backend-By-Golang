@@ -1,28 +1,43 @@
-
-
-name: build the project
+name: Build and Test
 
 on:
-  push: 
+  push:
     branches: ["main"]
-  pull_request: 
+  pull_request:
     branches: ["main"]
 
-  
 jobs:
-  
-  build: 
+  build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: "1.25"
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.25"
 
-    - name: Build the project
-      run: go build -v
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-    - name: Test the project
-      run: go test -v
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run fmt
+        run: go fmt ./...
+
+      - name: Lint code
+        run: go install golang.org/x/lint/golint@latest && golint ./...
+
+      - name: Build the project
+        run: go build -v -o bin/app
+
+      - name: Test the project
+        run: go test -v ./...
