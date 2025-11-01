@@ -72,7 +72,7 @@ func (u *userUsecase) Register(req *dto.RegisterRequest) (*models.User, error) {
 					Specialization: req.Doctor.Specialization,
 					Experience:     req.Doctor.Experience,
 					Fee:            req.Doctor.Fee,
-					ProfileImage:   req.Doctor.ProfileImage,
+					ProfileImageId:   req.Doctor.ProfileImageId,
 					Status:         req.Doctor.Status,
 				}
 				createdDoctor, err := u.doctorUC.CreateTx(tx, doctorReq)

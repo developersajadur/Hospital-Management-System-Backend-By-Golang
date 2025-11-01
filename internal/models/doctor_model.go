@@ -18,14 +18,18 @@ const (
 type Doctor struct {
     ID             uuid.UUID    `gorm:"type:uuid;primaryKey" json:"id"`
     UserID         uuid.UUID    `gorm:"type:uuid;not null;uniqueIndex" json:"user_id"`
-    // ❌ Remove `User *User` from Doctor
     Specialization string       `gorm:"type:varchar(255);not null" json:"specialization"`
     Experience     int          `gorm:"not null" json:"experience"`
     Fee            float64      `gorm:"type:decimal(10,2);not null" json:"fee"`
-    ProfileImage   string       `gorm:"type:varchar(255)" json:"profile_image"`
+    ProfileImageId   string       `gorm:"type:uuid" json:"profile_image_id"`
     Status         DoctorStatus `gorm:"type:varchar(20);not null;default:'active'" json:"status"`
     CreatedAt      time.Time    `json:"created_at"`
     UpdatedAt      time.Time    `json:"updated_at"`
+
+		
+	// Relations
+	Image Image `gorm:"foreignKey:ProfileImageId" json:"image,omitempty"`
+	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 

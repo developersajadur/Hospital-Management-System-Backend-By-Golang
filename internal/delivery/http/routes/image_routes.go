@@ -14,25 +14,24 @@ const (
 	uploadMultipleImages = "/upload-multiple"
 	getImage             = "/{id}"
 	getUserImages        = "/user/{user_id}"
-	deleteImage          = "/{id}"
+	deleteImage          = "/delete/{id}"
 )
 
 func RegisterImageRoutes(r chi.Router, handler *handlers.ImageHandler, userUC usecase.UserUsecase) {
 	const imageRoutePrefix = "/images"
 
 	r.Route(imageRoutePrefix, func(r chi.Router) {
-		
+
 		// Protected routes
-			r.Group(func(r chi.Router) {
+		r.Group(func(r chi.Router) {
 			// Any authenticated user can access profile
 			r.Use(middlewares.Auth(userUC, []string{models.RoleAdmin, models.RoleDoctor, models.RolePatient}))
-					r.Post(uploadImage, handler.UploadImage)
-		r.Post(uploadMultipleImages, handler.UploadMultipleImages)
-		r.Get(getImage, handler.GetImage)
-		r.Get(getUserImages, handler.GetUserImages)
-		r.Delete(deleteImage, handler.DeleteImage)
+			r.Post(uploadImage, handler.UploadImage)
+			r.Post(uploadMultipleImages, handler.UploadMultipleImages)
+			r.Get(getImage, handler.GetImage)
+			r.Get(getUserImages, handler.GetUserImages)
+			r.Delete(deleteImage, handler.DeleteImage)
 		})
 	})
-	
-	
+
 }

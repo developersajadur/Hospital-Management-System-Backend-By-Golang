@@ -29,10 +29,13 @@ func RunServer() {
 	postgres_db.Migration(postgres_db.DB)
 
 		// Initialize Cloudinary
-	_, err := cloudinary.NewCloudinary()
+	cld, err := cloudinary.NewCloudinary()
 	if err != nil {
 		log.Fatal("Failed to initialize Cloudinary:", err)
 	}
+
+	// Initialize CloudinaryUploader
+	cloudinaryUploader := helpers.New(cld)
 
 
 	// Initialize email repository
@@ -87,7 +90,7 @@ func RunServer() {
 	// Mount API v1 routes
 	const apiV1Prefix = "/api/v1"
 	r.Route(apiV1Prefix, func(api chi.Router) {
-		routes.SetupRoutes(api, postgres_db.DB)
+		routes.SetupRoutes(api, postgres_db.DB, cloudinaryUploader)
 	})
 
 	// Create HTTP server

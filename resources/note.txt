@@ -1,0 +1,74 @@
+
+
+
+
+
+
+func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
+    // Parse multipart form (max 10MB)
+    if err := r.ParseMultipartForm(10 << 20); err != nil {
+        helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Failed to parse form data"))
+        return
+    }
+
+    file, fileHeader, err := r.FormFile("image")
+    if err != nil {
+        helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Room image required"))
+        return
+    }
+    defer file.Close()
+
+    // Parse other form fields
+    name := r.FormValue("name")
+    priceStr := r.FormValue("price")
+    price, _ := strconv.ParseFloat(priceStr, 64)
+
+    req := &dto.RoomCreateRequest{
+        Name:  name,
+        Price: price,
+    }
+
+    room, err := h.roomUc.CreateRoomWithImage(file, fileHeader, req)
+    if err != nil {
+        helpers.Error(w, helpers.NewAppError(http.StatusInternalServerError, err.Error()))
+        return
+    }
+
+    helpers.Success(w, http.StatusCreated, "Room created successfully", room)
+}
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+func (u *roomUsecase) CreateRoomWithImage(file multipart.File, fileHeader *multipart.FileHeader, req *dto.RoomCreateRequest) (*models.Room, error) {
+    // 1. Upload image to Cloudinary
+    uploaded, err := u.cloudinaryUploader.UploadImage(file, fileHeader, &helpers.UploadOptions{
+        Folder: "uploads/rooms",
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to upload room image: %w", err)
+    }
+
+    // 2. Create Room record
+    room := &models.Room{
+        Name:     req.Name,
+        Price:    req.Price,
+        ImageURL: uploaded.URL,
+        ImageID:  uploaded.PublicID,
+    }
+
+    // 3. Save to DB
+    if err := u.repo.Create(room); err != nil {
+        // rollback Cloudinary upload if DB save fails
+        u.cloudinaryUploader.Delete(uploaded.PublicID)
+        return nil, fmt.Errorf("failed to save room: %w", err)
+    }
+
+    return room, nil
+}
+

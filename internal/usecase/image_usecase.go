@@ -1,4 +1,3 @@
-// internal/usecase/image_usecase.go
 package usecase
 
 import (
@@ -8,130 +7,86 @@ import (
 	"hospital_management_system/internal/infra/repository"
 	"hospital_management_system/internal/models"
 	"hospital_management_system/internal/pkg/helpers"
+	"hospital_management_system/internal/pkg/validators"
 	"mime/multipart"
-	"path/filepath"
-	"strings"
 	"sync"
-	"time"
 
-	"github.com/cloudinary/cloudinary-go/v2"
-	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/google/uuid"
 )
 
 type ImageUsecase interface {
-	UploadImage(file multipart.File, fileHeader *multipart.FileHeader, req *dto.ImageUploadRequest) (*models.Image, error)
-UploadMultipleImages(files []multipart.File, fileHeaders []*multipart.FileHeader, req *dto.ImageUploadRequest) ([]*models.Image, []error)
+	UploadImage(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, req *dto.ImageUploadRequest) (*models.Image, error)
+	UploadMultipleImages(ctx context.Context, files []multipart.File, fileHeaders []*multipart.FileHeader, req *dto.ImageUploadRequest) ([]*models.Image, []error)
 	GetImageByID(id uuid.UUID) (*models.Image, error)
 	GetUserImages(userID uuid.UUID, page, pageSize int) (*dto.ListResponse, error)
-	DeleteImage(id uuid.UUID) error
+	DeleteImage(ctx context.Context, id uuid.UUID) error
 }
 
 type imageUsecase struct {
-	repo repository.ImageRepository
-	cld  *cloudinary.Cloudinary
+	repo               repository.ImageRepository
+	cloudinaryUploader *helpers.CloudinaryUploader
 }
 
-func ImageNewUsecase(repo repository.ImageRepository, cld *cloudinary.Cloudinary) ImageUsecase {
+func ImageNewUsecase(repo repository.ImageRepository, cloudinaryUploader *helpers.CloudinaryUploader) ImageUsecase {
 	return &imageUsecase{
-		repo: repo,
-		cld:  cld,
+		repo:               repo,
+		cloudinaryUploader: cloudinaryUploader,
 	}
 }
 
-// UploadImage uploads image to Cloudinary and saves record to database
-func (u *imageUsecase) UploadImage(file multipart.File, fileHeader *multipart.FileHeader, req *dto.ImageUploadRequest) (*models.Image, error) {
-	// Validate file type
-	allowedTypes := map[string]bool{
-		"image/jpeg": true,
-		"image/jpg":  true,
-		"image/png":  true,
-		"image/webp": true,
+func (u *imageUsecase) UploadImage(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, req *dto.ImageUploadRequest) (*models.Image, error) {
+	if err := validators.ValidateImage(fileHeader); err != nil {
+		return nil, err
 	}
 
-	contentType := fileHeader.Header.Get("Content-Type")
-	if !allowedTypes[contentType] {
-		return nil, helpers.NewAppError(400, "Invalid file type. Only JPEG, PNG, and WebP allowed")
-	}
-
-	// Validate file size (max 10MB)
-	const imageMaxSize = int64(10 << 20) // 10MB
-	if fileHeader.Size > imageMaxSize {
-		return nil, helpers.NewAppError(400, "Image size too large. Max 10MB")
-	}
-
-	// Set default folder if not provided
-		folder := fmt.Sprintf("uploads/%s", req.ImageType)
-	
-
-	// Generate unique filename
-	ext := filepath.Ext(fileHeader.Filename)
-	fileName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
-
-	// Upload to Cloudinary
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	uploadResult, err := u.cld.Upload.Upload(ctx, file, uploader.UploadParams{
-		PublicID:       strings.TrimSuffix(fileName, ext),
-		Folder:         folder,
-		ResourceType:   "image",
-		Transformation: "q_auto,f_auto",
-	})
-
+	folder := "uploads/" + req.ImageType
+	uploaded, err := u.cloudinaryUploader.UploadImage(file, fileHeader, &helpers.UploadOptions{Folder: folder})
 	if err != nil {
-		return nil, helpers.NewAppError(500, fmt.Sprintf("Failed to upload image: %v", err))
+		return nil, fmt.Errorf("failed to upload image: %w", err)
 	}
 
-	// Create image record
 	image := &models.Image{
 		UserID:    req.UserID,
-		URL:       uploadResult.SecureURL,
-		PublicID:  uploadResult.PublicID,
-		FileName:  fileHeader.Filename,
-		FileSize:  fileHeader.Size,
-		FileType:  contentType,
-		Width:     uploadResult.Width,
-		Height:    uploadResult.Height,
+		URL:       uploaded.URL,
+		PublicID:  uploaded.PublicID,
+		FileName:  uploaded.FileName,
+		FileSize:  uploaded.FileSize,
+		FileType:  uploaded.FileType,
+		Width:     uploaded.Width,
+		Height:    uploaded.Height,
 		ImageType: req.ImageType,
 	}
 
-	// Save to database
 	if err := u.repo.Create(image); err != nil {
-		// If database save fails, delete from Cloudinary
-		u.deleteFromCloudinary(uploadResult.PublicID)
-		return nil, helpers.NewAppError(500, "Failed to save image record")
+		_ = u.cloudinaryUploader.Delete(uploaded.PublicID)
+		return nil, fmt.Errorf("failed to save image record: %w", err)
 	}
 
 	return image, nil
 }
 
-// UploadMultipleImages uploads multiple images concurrently
-func (u *imageUsecase) UploadMultipleImages(files []multipart.File, fileHeaders []*multipart.FileHeader, req *dto.ImageUploadRequest) ([]*models.Image, []error) {
+func (u *imageUsecase) UploadMultipleImages(ctx context.Context, files []multipart.File, fileHeaders []*multipart.FileHeader, req *dto.ImageUploadRequest) ([]*models.Image, []error) {
 	var (
 		images []*models.Image
 		errors []error
 		mu     sync.Mutex
 		wg     sync.WaitGroup
 	)
-
-	// Use semaphore to limit concurrent uploads
-	semaphore := make(chan struct{}, 3) // Max 3 concurrent uploads
+	semaphore := make(chan struct{}, 3)
 
 	for i := range files {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			semaphore <- struct{}{} // Acquire
-			defer func() { <-semaphore }() // Release
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
 
-			image, err := u.UploadImage(files[idx], fileHeaders[idx], req)
-			
+			img, err := u.UploadImage(ctx, files[idx], fileHeaders[idx], req)
 			mu.Lock()
 			if err != nil {
 				errors = append(errors, err)
 			} else {
-				images = append(images, image)
+				images = append(images, img)
 			}
 			mu.Unlock()
 		}(i)
@@ -140,6 +95,7 @@ func (u *imageUsecase) UploadMultipleImages(files []multipart.File, fileHeaders 
 	wg.Wait()
 	return images, errors
 }
+
 
 // GetImageByID retrieves image by ID
 func (u *imageUsecase) GetImageByID(id uuid.UUID) (*models.Image, error) {
@@ -188,7 +144,7 @@ func (u *imageUsecase) GetUserImages(userID uuid.UUID, page, pageSize int) (*dto
 }
 
 // DeleteImage deletes image from both Cloudinary and database
-func (u *imageUsecase) DeleteImage(id uuid.UUID) error {
+func (u *imageUsecase) DeleteImage(ctx context.Context, id uuid.UUID) error {
 	// Get image record
 	image, err := u.repo.FindByID(id)
 	if err != nil {
@@ -196,7 +152,7 @@ func (u *imageUsecase) DeleteImage(id uuid.UUID) error {
 	}
 
 	// Delete from Cloudinary
-	if err := u.deleteFromCloudinary(image.PublicID); err != nil {
+	if err := u.cloudinaryUploader.Delete(image.PublicID); err != nil {
 		return helpers.NewAppError(500, "Failed to delete image from Cloudinary")
 	}
 
@@ -206,17 +162,4 @@ func (u *imageUsecase) DeleteImage(id uuid.UUID) error {
 	}
 
 	return nil
-}
-
-// deleteFromCloudinary helper function to delete image from Cloudinary
-func (u *imageUsecase) deleteFromCloudinary(publicID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err := u.cld.Upload.Destroy(ctx, uploader.DestroyParams{
-		PublicID:     publicID,
-		ResourceType: "image",
-	})
-
-	return err
 }

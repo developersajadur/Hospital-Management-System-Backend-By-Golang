@@ -8,23 +8,17 @@ import (
 
 	"hospital_management_system/config"
 	"hospital_management_system/internal/delivery/http/handlers"
-	"hospital_management_system/internal/infra/cloudinary"
 	"hospital_management_system/internal/infra/rabbitmq"
 	"hospital_management_system/internal/infra/repository"
 	"hospital_management_system/internal/pkg/helpers"
 	"hospital_management_system/internal/usecase"
 )
 
-func SetupRoutes(r chi.Router, db *gorm.DB) {
+func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.CloudinaryUploader) {
 	// Initialize RabbitMQ publisher dependencies
 	publisher, err := rabbitmq.NewPublisher(config.ENV.RabbitMqUrl, "email_queue")
 	if err != nil {
 		log.Fatalf("Failed to create RabbitMQ publisher: %v", err)
-	}
-	// Initialize cloudinary  dependencies
-	cloudinary, err := cloudinary.NewCloudinary()
-	if err != nil {
-		helpers.NewAppError(400, "OTP expired")
 	}
 
 	// Initialize Doctor dependencies
@@ -54,7 +48,7 @@ func SetupRoutes(r chi.Router, db *gorm.DB) {
 
 	// Initialize Image dependencies
 	imageRepo := repository.ImageNewRepository(db)
-	imageUsecase := usecase.ImageNewUsecase(imageRepo, cloudinary)
+	imageUsecase := usecase.ImageNewUsecase(imageRepo, cloudinaryUploader)
 	imageHandler := handlers.ImageNewHandler(imageUsecase)
 
 	// Register routes

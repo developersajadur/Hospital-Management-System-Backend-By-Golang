@@ -28,6 +28,7 @@ type User struct {
 
 	Doctor  *Doctor  `gorm:"foreignKey:UserID" json:"doctor,omitempty"`
 	Patient *Patient `gorm:"foreignKey:UserID" json:"patient,omitempty"`
+	
 }
 
 

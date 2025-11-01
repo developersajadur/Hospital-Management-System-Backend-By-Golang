@@ -40,6 +40,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.RegisterRequest
 	utils.BodyDecoder(w, r, &req)
 
+
 	// Register the user
 	user, err := h.userUc.Register(&req)
 	if err != nil {

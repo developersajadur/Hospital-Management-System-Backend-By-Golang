@@ -18,12 +18,16 @@ const (
 type Patient struct {
 	ID             uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 	UserID         uuid.UUID `gorm:"type:uuid;not null;uniqueIndex;constraint:OnDelete:CASCADE" json:"user_id"`
+	ProfileImageId string    `gorm:"type:uuid" json:"profile_image_id"`
 	Age            int       `gorm:"not null" json:"age"`
 	Gender         Gender    `gorm:"type:varchar(20);not null" json:"gender"`
 	Address        string    `gorm:"type:text;not null" json:"address"`
 	MedicalHistory string    `gorm:"type:text" json:"medical_history,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+
+	Image Image `gorm:"foreignKey:ProfileImageId" json:"image,omitempty"`
+	User  User  `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 // BeforeCreate hook: auto-generate UUID and timestamps
