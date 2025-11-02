@@ -1,4 +1,3 @@
-// internal/services/email/usecase.go
 package usecase
 
 import (
