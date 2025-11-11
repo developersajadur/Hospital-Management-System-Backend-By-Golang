@@ -85,21 +85,6 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	helpers.Success(w, http.StatusCreated, "User registered successfully. OTP sent to email.", user)
 }
 
-// Login authenticates a user and returns a JWT
-func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req dto.LoginRequest
-	utils.BodyDecoder(w, r, &req)
-
-	token, err := h.userUc.Login(&req)
-	if err != nil {
-		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	helpers.Success(w, http.StatusOK, "Login successful", map[string]string{
-		"token": token,
-	})
-}
 
 // GetProfile returns the authenticated user's profile
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {

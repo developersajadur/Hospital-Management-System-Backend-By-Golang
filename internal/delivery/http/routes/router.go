@@ -35,6 +35,12 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	userRepo := repository.UserNewRepository(db)
 	userUsecase := usecase.UserNewUsecase(userRepo, doctorUsecase, patientUsecase)
 
+
+	// Initialize Auth dependencies
+
+	authUsecase := usecase.AuthNewUsecase(userRepo)
+	authHandler := handlers.AuthNewHandler(authUsecase)
+
 	// Initialize Email dependencies
 	emailRepo := repository.EmailNewRepository(db)
 	emailUsecase := usecase.EmailNewUsecase(emailRepo)
@@ -61,6 +67,7 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	RegisterOtpRoutes(r, otpHandler, otpUsecase)
 	RegisterImageRoutes(r, imageHandler, userUsecase)
 	RegisterRoomRoutes(r, roomHandler, userUsecase)
+	RegisterAuthRoutes(r, authHandler, userUsecase)
 	// doctor.RegisterRoutes(r, doctorHandler, doctorUsecase)
 
 }

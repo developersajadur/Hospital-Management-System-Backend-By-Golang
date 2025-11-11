@@ -14,7 +14,6 @@ const (
 	registerPatientRoute = registerRoute + "/patient"
 	registerAdminRoute = registerRoute + "/admin"
 	registerDoctorRoute = registerRoute + "/doctor"
-	loginRoute    = "/auth/login"
 	profileRoute  = "/profile"
 )
 
@@ -24,7 +23,6 @@ func RegisterUserRoutes(r chi.Router, handler *handlers.UserHandler, userUC usec
 	r.Route(userRoutePrefix, func(r chi.Router) {
 		// Public routes
 		r.Post(registerPatientRoute, handler.Register) // patient registration and general
-		r.Post(loginRoute, handler.Login)
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
