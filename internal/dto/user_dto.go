@@ -5,7 +5,7 @@ type DoctorInfo struct {
 	Specialization string  `json:"specialization"`
 	Experience     int     `json:"experience"`
 	Fee            float64 `json:"fee"`
-	ProfileImage   string  `json:"profile_image"`
+	ProfileImageURL   string  `json:"profile_image_url"`
 	Status         string  `json:"status"`
 }
 

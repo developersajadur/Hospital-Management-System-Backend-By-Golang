@@ -7,7 +7,7 @@ type DoctorCreateRequest struct {
 	Specialization string       `json:"specialization" binding:"required"`
 	Experience     int          `json:"experience" binding:"required"`
 	Fee            float64      `json:"fee" binding:"required"`
-	ProfileImageId   string       `json:"profile_image_id"`
+	ProfileImageURL   string       `json:"profile_image_url,omitempty"`
 	Status         models.DoctorStatus `json:"status" binding:"required,oneof=active inactive on_leave"`
 }
 
@@ -17,6 +17,6 @@ type DoctorUpdateRequest struct {
 	Specialization string       `json:"specialization,omitempty"`
 	Experience     int          `json:"experience,omitempty"`
 	Fee            float64      `json:"fee,omitempty"`
-	ProfileImageId   string       `json:"profile_image_id,omitempty"`
+	ProfileImageURL   string       `json:"profile_image_url,omitempty"`
 	Status         models.DoctorStatus `json:"status,omitempty"`
 }

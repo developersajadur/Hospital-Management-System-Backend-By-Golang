@@ -19,8 +19,9 @@ import (
 	"hospital_management_system/internal/infra/rabbitmq"
 	"hospital_management_system/internal/infra/repository"
 	"hospital_management_system/internal/pkg/helpers"
-		"github.com/go-chi/chi/v5"
-	"github.com/go-chi/cors" 
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 )
 
 func RunServer() {
@@ -28,7 +29,7 @@ func RunServer() {
 	postgres_db.ConnectDB()
 	postgres_db.Migration(postgres_db.DB)
 
-		// Initialize Cloudinary
+	// Initialize Cloudinary
 	cld, err := cloudinary.NewCloudinary()
 	if err != nil {
 		log.Fatal("Failed to initialize Cloudinary:", err)
@@ -36,7 +37,6 @@ func RunServer() {
 
 	// Initialize CloudinaryUploader
 	cloudinaryUploader := helpers.New(cld)
-
 
 	// Initialize email repository
 	emailRepo := repository.EmailNewRepository(postgres_db.DB)
@@ -65,7 +65,7 @@ func RunServer() {
 
 	// Global middleware
 	r.Use(middlewares.LoggingMiddleware)
-		r.Use(cors.Handler(cors.Options{
+	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},

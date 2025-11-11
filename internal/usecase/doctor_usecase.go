@@ -48,7 +48,7 @@ func (u *doctorUsecase) CreateTx(tx *gorm.DB, req *dto.DoctorCreateRequest) (*mo
 		Specialization: req.Specialization,
 		Experience:     req.Experience,
 		Fee:            req.Fee,
-		ProfileImageId:   req.ProfileImageId,
+		ProfileImageURL:   &req.ProfileImageURL,
 		Status:         req.Status,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),

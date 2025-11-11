@@ -49,7 +49,7 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	otpRepo := repository.OtpNewRepository(db)
 	otpUsecase := usecase.OtpNewUsecase(otpRepo, emailUsecase, userUsecase, publisher)
 
-	userHandler := handlers.UserNewHandler(userUsecase, otpUsecase, emailUsecase, publisher)
+	userHandler := handlers.UserNewHandler(userUsecase, otpUsecase, emailUsecase, publisher, cloudinaryUploader)
 	otpHandler := handlers.OtpNewHandler(otpUsecase)
 
 	// Initialize Image dependencies

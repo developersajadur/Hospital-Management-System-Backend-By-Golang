@@ -12,7 +12,7 @@ import (
 
 type PatientUsecase interface {
 	Create(req *dto.PatientCreateRequest) (*models.Patient, error)
-	CreateTx(txTx interface{}, req *dto.PatientCreateRequest) (*models.Patient, error) 
+	CreateTx(txTx interface{}, req *dto.PatientCreateRequest) (*models.Patient, error)
 }
 
 type patientUsecase struct {
@@ -43,11 +43,12 @@ func (u *patientUsecase) CreateTx(tx interface{}, req *dto.PatientCreateRequest)
 	}
 
 	patient := &models.Patient{
-		UserID:         uuidFromString(req.UserID),
-		Age:            req.Age,
-		Gender:         models.Gender(req.Gender),
-		Address:        req.Address,
-		MedicalHistory: req.MedicalHistory,
+		UserID:          uuidFromString(req.UserID),
+		Age:             req.Age,
+		Gender:          models.Gender(req.Gender),
+		Address:         req.Address,
+		ProfileImageURL: &req.ProfileImageURL,
+		MedicalHistory:  req.MedicalHistory,
 	}
 
 	return u.repo.CreateTx(gormTx, patient)
