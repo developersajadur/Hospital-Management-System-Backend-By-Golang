@@ -17,7 +17,7 @@ func RegisterRoomRoutes(r chi.Router, handler *handlers.RoomHandler, userUC usec
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.Auth(userUC, []string{models.RoleAdmin}))
 			r.Post("/create", handler.Create)
-			r.Patch("/{id}", handler.Update)
+			r.Patch("/update/{id}", handler.Update)
 			r.Delete("/{id}", handler.Delete)
 		})
 

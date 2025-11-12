@@ -60,7 +60,7 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	// Initialize Room dependencies
 	roomRepo := repository.RoomNewRepository(db)
 	roomUsecase := usecase.RoomNewUsecase(roomRepo)
-	roomHandler := handlers.RoomNewHandler(roomUsecase)
+	roomHandler := handlers.RoomNewHandler(roomUsecase, cloudinaryUploader)
 
 	// Register routes
 	RegisterUserRoutes(r, userHandler, userUsecase)

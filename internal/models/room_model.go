@@ -17,14 +17,15 @@ const (
 
 type Room struct {
 	ID           uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
-	RoomNumber   string     `gorm:"type:varchar(50);not null;unique" json:"room_number"`
+	RoomNumber   string     `gorm:"type:varchar(50);not null;uniqueIndex" json:"room_number"`
 	Type         RoomType   `gorm:"type:varchar(20);not null" json:"type"`
 	PricePerDay  float64    `gorm:"type:decimal(10,2);not null" json:"price_per_day"`
-	Availability bool       `gorm:"default:true" json:"availability"`
+	Availability bool       `gorm:"default:true;not null" json:"availability"`
 	Features     string     `gorm:"type:text" json:"features,omitempty"`
+	Image        *string    `gorm:"type:varchar(500)" json:"image,omitempty"`
 	IsDeleted    bool       `gorm:"default:false" json:"is_deleted"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
+	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt    *time.Time `gorm:"index" json:"deleted_at,omitempty"`
 }
 
@@ -43,9 +44,6 @@ func (r *Room) BeforeUpdate(tx *gorm.DB) error {
 	return nil
 }
 
-
-// UUIDFromString safely converts a string to uuid.UUID.
-// Returns uuid.Nil if invalid or empty.
 func UUIDFromString(s string) uuid.UUID {
 	if s == "" {
 		return uuid.Nil

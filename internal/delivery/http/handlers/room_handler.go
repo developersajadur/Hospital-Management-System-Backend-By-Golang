@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"hospital_management_system/internal/dto"
 	"hospital_management_system/internal/pkg/helpers"
 	"hospital_management_system/internal/pkg/utils"
@@ -9,23 +10,51 @@ import (
 )
 
 type RoomHandler struct {
-	roomUC usecase.RoomUsecase
+	roomUC   usecase.RoomUsecase
+	uploader *helpers.CloudinaryUploader
 }
 
-func RoomNewHandler(roomUC usecase.RoomUsecase) *RoomHandler {
-	return &RoomHandler{roomUC: roomUC}
+func RoomNewHandler(roomUC usecase.RoomUsecase, uploader *helpers.CloudinaryUploader) *RoomHandler {
+	return &RoomHandler{roomUC: roomUC, uploader: uploader}
 }
 
 // POST /rooms/create
 func (h *RoomHandler) Create(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Invalid form data"))
+		return
+	}
+
 	var req dto.CreateRoomRequest
-	utils.BodyDecoder(w, r, &req)
+	jsonData := r.FormValue("data")
+	if jsonData == "" {
+		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Missing 'data' field in form"))
+		return
+	}
+
+	if err := json.Unmarshal([]byte(jsonData), &req); err != nil {
+		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Invalid JSON data"))
+		return
+	}
+
+	file, fileHeader, err := r.FormFile("image")
+	if err == nil {
+		defer file.Close()
+		uploadOpts := &helpers.UploadOptions{Folder: "room_images"}
+		uploadedImage, err := h.uploader.UploadImage(file, fileHeader, uploadOpts)
+		if err != nil {
+			helpers.Error(w, helpers.NewAppError(http.StatusInternalServerError, "Failed to upload image"))
+			return
+		}
+		req.Image = &uploadedImage.URL
+	}
 
 	room, err := h.roomUC.Create(&req)
 	if err != nil {
 		helpers.Error(w, err)
 		return
 	}
+
 	helpers.Success(w, http.StatusCreated, "Room created successfully", room)
 }
 
@@ -63,9 +92,43 @@ func (h *RoomHandler) GetRooms(w http.ResponseWriter, r *http.Request) {
 
 // PUT /rooms/{id}
 func (h *RoomHandler) Update(w http.ResponseWriter, r *http.Request) {
+	// Parse multipart form
+	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB limit
+		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Invalid form data"))
+		return
+	}
+
 	id := utils.Param(r, "id")
 	var req dto.UpdateRoomRequest
-	utils.BodyDecoder(w, r, &req)
+	jsonData := r.FormValue("data")
+	if jsonData == "" {
+		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Missing 'data' field in form"))
+		return
+	}
+
+	if err := json.Unmarshal([]byte(jsonData), &req); err != nil {
+		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Invalid JSON data"))
+		return
+	}
+
+	// Handle image upload
+	file, fileHeader, err := r.FormFile("image")
+	if err == nil {
+		defer file.Close()
+
+		uploadOpts := &helpers.UploadOptions{Folder: "room_images"}
+		uploadedImage, err := h.uploader.UploadImage(file, fileHeader, uploadOpts)
+		if err != nil {
+			helpers.Error(w, helpers.NewAppError(http.StatusInternalServerError, "Failed to upload image"))
+			return
+		}
+		// fmt.Printf(uploadedImage.URL)
+		// Update profile image URL in request
+		req.Image = &uploadedImage.URL
+	} else if err != http.ErrMissingFile {
+		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Invalid image file"))
+		return
+	}
 
 	room, err := h.roomUC.Update(id, &req)
 	if err != nil {
