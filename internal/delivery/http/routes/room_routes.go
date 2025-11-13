@@ -9,6 +9,15 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+
+const (
+	createRoomRoute    = "/create"
+	updateRoomRoute    = "/update/{id}"
+	deleteRoomRoute    = "/delete/{id}"
+	getRoomByNumberRoute = "/get/{room_number}"
+	getAllRoomsRoute   = "/get-all"
+)
+
 func RegisterRoomRoutes(r chi.Router, handler *handlers.RoomHandler, userUC usecase.UserUsecase) {
 	const prefix = "/rooms"
 
@@ -16,13 +25,13 @@ func RegisterRoomRoutes(r chi.Router, handler *handlers.RoomHandler, userUC usec
 		// Admin-only protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.Auth(userUC, []string{models.RoleAdmin}))
-			r.Post("/create", handler.Create)
-			r.Patch("/update/{id}", handler.Update)
-			r.Delete("/{id}", handler.Delete)
+			r.Post(createRoomRoute, handler.Create)
+			r.Patch(updateRoomRoute, handler.Update)
+			r.Delete(deleteRoomRoute, handler.Delete)
 		})
 
 		// Public routes
-		r.Get("/", handler.GetRooms)
-		r.Get("/{room_number}", handler.GetByRoomNumber)
+		r.Get(getAllRoomsRoute, handler.GetRooms)
+		r.Get(getRoomByNumberRoute, handler.GetByRoomNumber)
 	})
 }

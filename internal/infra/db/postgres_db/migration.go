@@ -17,7 +17,7 @@ func Migration(DB *gorm.DB) {
 		// &doctor.DoctorAvailability{},
 		// &doctor.DoctorSlot{},
 		&models.Room{},
-		// &service_entity.Service{},
+		&models.Service{},
 		// &booking.Booking{},
 		// &payment.Payment{},
 		&models.OTP{},
