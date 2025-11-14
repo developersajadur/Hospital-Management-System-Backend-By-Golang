@@ -35,7 +35,6 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	userRepo := repository.UserNewRepository(db)
 	userUsecase := usecase.UserNewUsecase(userRepo, doctorUsecase, patientUsecase)
 
-
 	// Initialize Auth dependencies
 
 	authUsecase := usecase.AuthNewUsecase(userRepo)
@@ -62,11 +61,15 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	roomUsecase := usecase.RoomNewUsecase(roomRepo)
 	roomHandler := handlers.RoomNewHandler(roomUsecase, cloudinaryUploader)
 
-
 	// Initialize Service dependencies
 	serviceRepo := repository.ServiceNewRepository(db)
 	serviceUsecase := usecase.ServiceNewUsecase(serviceRepo)
 	serviceHandler := handlers.ServiceNewHandler(serviceUsecase)
+
+	// Initialize Booking dependencies
+	bookingRepo := repository.BookingNewRepository(db)
+	bookingUsecase := usecase.BookingNewUsecase(bookingRepo, patientRepo, roomRepo, serviceRepo)
+	bookingHandler := handlers.BookingNewHandler(bookingUsecase)
 
 	// Register routes
 	RegisterUserRoutes(r, userHandler, userUsecase)
@@ -75,6 +78,7 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	RegisterRoomRoutes(r, roomHandler, userUsecase)
 	RegisterAuthRoutes(r, authHandler, userUsecase)
 	RegisterServiceRoutes(r, serviceHandler, userUsecase)
+	RegisterBookingRoutes(r, bookingHandler, userUsecase)
 	// doctor.RegisterRoutes(r, doctorHandler, doctorUsecase)
 
 }

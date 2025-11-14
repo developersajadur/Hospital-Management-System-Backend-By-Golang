@@ -11,6 +11,7 @@ type PatientRepository interface {
 	Create(patient *models.Patient) (*models.Patient, error)
 	CreateTx(tx *gorm.DB, patient *models.Patient) (*models.Patient, error)
 	FindByUserID(userID string) (*models.Patient, error)
+	GetPatientByID(id string) (*models.User, error)
 	FindByUserIDTx(tx *gorm.DB, userID string) (*models.Patient, error)
 }
 
@@ -56,4 +57,13 @@ func (r *patientRepo) FindByUserIDTx(tx *gorm.DB, userID string) (*models.Patien
 		return nil, nil
 	}
 	return &patient, err
+}
+
+func (r *patientRepo) GetPatientByID(id string) (*models.User, error) {
+	var u models.User
+	err := r.db.Where("id = ? AND role = ?", id, models.RolePatient).First(&u).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &u, err
 }

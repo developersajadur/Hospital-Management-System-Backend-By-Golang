@@ -45,7 +45,7 @@ func (u *serviceUsecase) Create(req *dto.CreateServiceRequest) (*models.Service,
 }
 
 func (u *serviceUsecase) GetByID(id string) (*models.Service, error) {
-	service, err := u.repo.GetByID(id)
+	service, err := u.repo.GetServiceByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, helpers.NewAppError(http.StatusNotFound, "Service not found")

@@ -8,7 +8,7 @@ import (
 
 type ServiceRepository interface {
 	Create(service *models.Service) (*models.Service, error)
-	GetByID(id string) (*models.Service, error)
+	GetServiceByID(id string) (*models.Service, error)
 	GetByName(name string) (*models.Service, error)
 	GetAll() ([]models.Service, error)
 	Update(service *models.Service) (*models.Service, error)
@@ -30,7 +30,7 @@ func (r *serviceRepo) Create(service *models.Service) (*models.Service, error) {
 	return service, nil
 }
 
-func (r *serviceRepo) GetByID(id string) (*models.Service, error) {
+func (r *serviceRepo) GetServiceByID(id string) (*models.Service, error) {
 	var service models.Service
 	if err := r.db.Where("id = ? AND is_deleted = FALSE", id).First(&service).Error; err != nil {
 		return nil, err

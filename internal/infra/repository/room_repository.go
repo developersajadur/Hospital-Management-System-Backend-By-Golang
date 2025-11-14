@@ -8,6 +8,7 @@ import (
 type RoomRepository interface {
 	Create(room *models.Room) (*models.Room, error)
 	GetByRoomNumber(roomNumber string) (*models.Room, error)
+	GetRoomByID(id string) (*models.Room, error)
 	GetRoomsWithFilters(roomType string, available *bool) ([]models.Room, error)
 	Update(room *models.Room) (*models.Room, error)
 	Delete(id string) error
@@ -71,4 +72,10 @@ func (r *roomRepo) Update(room *models.Room) (*models.Room, error) {
 // Soft delete
 func (r *roomRepo) Delete(id string) error {
 	return r.db.Model(&models.Room{}).Where("id = ?", id).Update("is_deleted", true).Error
+}
+
+func (r *roomRepo) GetRoomByID(id string) (*models.Room, error) {
+	var room models.Room
+	err := r.db.Where("id = ? AND is_deleted = FALSE", id).First(&room).Error
+	return &room, err
 }

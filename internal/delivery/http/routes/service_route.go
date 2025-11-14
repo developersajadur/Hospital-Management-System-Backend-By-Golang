@@ -28,7 +28,6 @@ func RegisterServiceRoutes(r chi.Router, handler *handlers.ServiceHandler, userU
 
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.Auth(userUC, []string{models.RoleAdmin}))
-
 			r.Post(CreateServiceRoute, handler.Create)
 			r.Patch(UpdateServiceRoute, handler.Update)
 			r.Delete(DeleteServiceRoute, handler.Delete)
