@@ -28,9 +28,9 @@ type Booking struct {
 	BookingType BookingType   `gorm:"type:varchar(20);not null" json:"booking_type"`
 	Status      BookingStatus `gorm:"type:varchar(20);not null;default:'pending'" json:"status"`
 
-	PatientID uuid.UUID `gorm:"type:uuid;not null" json:"patient_id"` 
-	Patient   Patient   `gorm:"foreignKey:PatientID; json:"patient,omitempty"`
-		// Patient   Patient   `gorm:"foreignKey:PatientID;references:ID" json:"patient,omitempty"`
+	PatientID uuid.UUID `gorm:"type:uuid;not null" json:"patient_id"`
+	Patient   Patient   `gorm:"foreignKey:PatientID" json:"patient,omitempty"`
+	// Patient   Patient   `gorm:"foreignKey:PatientID;references:ID" json:"patient,omitempty"`
 
 	RoomID       *uuid.UUID `gorm:"type:uuid" json:"room_id,omitempty"`
 	Room         *Room      `gorm:"foreignKey:RoomID" json:"room,omitempty"`
