@@ -36,7 +36,7 @@ type Booking struct {
 	Room         *Room      `gorm:"foreignKey:RoomID" json:"room,omitempty"`
 	CheckInDate  *time.Time `json:"check_in_date,omitempty"`
 	CheckOutDate *time.Time `json:"check_out_date,omitempty"`
-	TotalPrice   *float64   `gorm:"type:decimal(10,2)" json:"total_price,omitempty"`
+	TotalPrice   *float64   `gorm:"type:decimal(10,2)" json:"total_price"`
 
 	ServiceID   *uuid.UUID `gorm:"type:uuid" json:"service_id,omitempty"`
 	Service     *Service   `gorm:"foreignKey:ServiceID" json:"service,omitempty"`

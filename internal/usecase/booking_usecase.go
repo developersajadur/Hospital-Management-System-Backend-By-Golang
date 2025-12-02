@@ -41,7 +41,6 @@ func BookingNewUsecase(
 	}
 }
 
-
 func (u *bookingUsecase) Create(req *dto.CreateBookingRequest) (*models.Booking, error) {
 
 	_, err := u.patientRepo.GetPatientByID(req.PatientID)
@@ -78,9 +77,23 @@ func (u *bookingUsecase) Create(req *dto.CreateBookingRequest) (*models.Booking,
 			return nil, helpers.NewAppError(http.StatusBadRequest, "Room is not available")
 		}
 
+		hasConflict, err := u.bookingRepo.CheckRoomBookingConflict(
+			roomID,
+			*req.CheckInDate,
+			*req.CheckOutDate,
+		)
+		if err != nil {
+			return nil, helpers.NewAppError(http.StatusInternalServerError, "Database error")
+		}
+
+		if hasConflict {
+			return nil, helpers.NewAppError(http.StatusBadRequest, "Room already booked in this time range")
+		}
+
 		booking.RoomID = utils.UUIDPtr(req.RoomID)
 		booking.CheckInDate = req.CheckInDate
 		booking.CheckOutDate = req.CheckOutDate
+		booking.TotalPrice = &room.PricePerDay
 	}
 
 	if req.BookingType == "service" {
@@ -91,7 +104,7 @@ func (u *bookingUsecase) Create(req *dto.CreateBookingRequest) (*models.Booking,
 
 		serviceID := models.UUIDFromString(*req.ServiceID)
 
-		_, err := u.serviceRepo.GetServiceByID(serviceID.String())
+		service, err := u.serviceRepo.GetServiceByID(serviceID.String())
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, helpers.NewAppError(http.StatusNotFound, "Service not found")
@@ -107,11 +120,11 @@ func (u *bookingUsecase) Create(req *dto.CreateBookingRequest) (*models.Booking,
 		booking.ServiceID = utils.UUIDPtr(req.ServiceID)
 		booking.ScheduledAt = req.ScheduledAt
 		booking.SerialNumber = &serial
+		booking.TotalPrice = &service.Price
 	}
 
 	return u.bookingRepo.Create(booking)
 }
-
 
 func (u *bookingUsecase) GetByID(id string) (*models.Booking, error) {
 	b, err := u.bookingRepo.GetByID(id)

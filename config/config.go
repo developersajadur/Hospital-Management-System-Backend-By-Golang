@@ -25,6 +25,10 @@ type Config struct {
 	CloudinaryCloudName string
 	CloudinaryApiKey string
 	CloudinaryApiSecret string
+	SSLStoreID       string
+	SSLStorePassword string
+	SSlSandbox      string
+	BaseURL          string
 }
 
 var ENV *Config
@@ -66,6 +70,10 @@ func Init() {
 		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME"),
 		CloudinaryApiKey: getEnv("CLOUDINARY_API_KEY"),
 		CloudinaryApiSecret: getEnv("CLOUDINARY_API_SECRET"),
+		SSLStoreID:       getEnv("SSL_STORE_ID"),
+		SSLStorePassword: getEnv("SSL_STORE_PASSWORD"),
+		SSlSandbox:      getEnv("SSL_SANDBOX"),
+		BaseURL:          getEnv("BASE_URL"),
 
 	}
 }

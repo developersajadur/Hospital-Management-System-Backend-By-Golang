@@ -12,6 +12,7 @@ type CreateBookingRequest struct {
 
 	ServiceID    *string    `json:"service_id,omitempty"`
 	ScheduledAt  *time.Time `json:"scheduled_at,omitempty"`
+	TotalPrice   *float64   `json:"total_price" validate:"required"`
 }
 
 type UpdateBookingStatusRequest struct {

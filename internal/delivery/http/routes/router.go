@@ -71,6 +71,11 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	bookingUsecase := usecase.BookingNewUsecase(bookingRepo, patientRepo, roomRepo, serviceRepo)
 	bookingHandler := handlers.BookingNewHandler(bookingUsecase)
 
+	//Initialize Payment dependencies
+	paymentRepo := repository.PaymentNewRepository(db)
+	paymentUsecase := usecase.NewPaymentUsecase(paymentRepo, bookingRepo)
+	paymentHandler := handlers.NewPaymentHandler(paymentUsecase)
+
 	// Register routes
 	RegisterUserRoutes(r, userHandler, userUsecase)
 	RegisterOtpRoutes(r, otpHandler, otpUsecase)
@@ -79,6 +84,7 @@ func SetupRoutes(r chi.Router, db *gorm.DB, cloudinaryUploader *helpers.Cloudina
 	RegisterAuthRoutes(r, authHandler, userUsecase)
 	RegisterServiceRoutes(r, serviceHandler, userUsecase)
 	RegisterBookingRoutes(r, bookingHandler, userUsecase)
+	RegisterPaymentRoutes(r, paymentHandler, userUsecase)
 	// doctor.RegisterRoutes(r, doctorHandler, doctorUsecase)
 
 }

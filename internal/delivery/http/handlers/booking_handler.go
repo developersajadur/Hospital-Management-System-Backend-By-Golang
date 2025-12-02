@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"hospital_management_system/internal/dto"
 	"hospital_management_system/internal/pkg/helpers"
 	"hospital_management_system/internal/pkg/utils"
@@ -20,10 +19,7 @@ func BookingNewHandler(bookingUC usecase.BookingUsecase) *BookingHandler {
 // POST /bookings
 func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateBookingRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Invalid JSON"))
-		return
-	}
+	utils.BodyDecoder(w, r, &req)
 
 	booking, err := h.bookingUC.Create(&req)
 	if err != nil {
@@ -63,10 +59,7 @@ func (h *BookingHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	id := utils.Param(r, "id")
 
 	var req dto.UpdateBookingStatusRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		helpers.Error(w, helpers.NewAppError(http.StatusBadRequest, "Invalid JSON"))
-		return
-	}
+	utils.BodyDecoder(w, r, &req)
 
 	booking, err := h.bookingUC.UpdateStatus(id, &req)
 	if err != nil {

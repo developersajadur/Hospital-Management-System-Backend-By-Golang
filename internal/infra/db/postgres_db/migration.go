@@ -19,7 +19,7 @@ func Migration(DB *gorm.DB) {
 		&models.Room{},
 		&models.Service{},
 		&models.Booking{},
-		// &payment.Payment{},
+		&models.Payment{},
 		&models.OTP{},
 		&models.Email{},
 		&models.Image{},
