@@ -9,7 +9,7 @@ A robust and scalable backend system for hospital management, built with Go (Gol
 - **Appointment Scheduling**: Schedule, reschedule, and cancel appointments with support for various constraints.
 - **Medical Records**: Securely store and manage patient medical histories.
 - **Authentication & Authorization**: Role-based access control (RBAC) to secure API endpoints.
-- **RESTful API**: Clean and well-documented API endpoints following REST principles.
+- **RESTful API**: Clean and well documented API endpoints following REST principles.
 - **Data Validation**: Comprehensive input validation for data integrity.
 - **Error Handling**: Consistent and informative error handling across the application.
 
