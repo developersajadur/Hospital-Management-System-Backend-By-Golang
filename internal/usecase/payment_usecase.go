@@ -19,6 +19,7 @@ type PaymentUsecase interface {
 	InitPayment(req *dto.InitPaymentRequest) (*dto.InitPaymentResponse, error)
 	HandleSuccessCallback(req dto.SSLCallbackRequest) error
 	HandleFailCallback(req dto.SSLCallbackRequest) error
+	GetAll() ([]models.Payment, error)
 }
 
 type paymentUsecase struct {
@@ -124,4 +125,9 @@ func (u *paymentUsecase) HandleFailCallback(req dto.SSLCallbackRequest) error {
 	}
 	payment.Status = models.PaymentFailed
 	return u.paymentRepo.Update(payment)
+}
+
+
+func (u *paymentUsecase) GetAll() ([]models.Payment, error) {
+	return u.paymentRepo.GetAll()
 }

@@ -57,3 +57,13 @@ func (h *PaymentHandler) Fail(w http.ResponseWriter, r *http.Request) {
 	_ = h.uc.HandleFailCallback(cb)
 	helpers.Success(w, 200, "Payment failed", nil)
 }
+
+func (h *PaymentHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	payments, err := h.uc.GetAll()
+	if err != nil {
+		helpers.Error(w, err)
+		return
+	}
+
+	helpers.Success(w, http.StatusOK, "Payments retrieved successfully", payments)
+}

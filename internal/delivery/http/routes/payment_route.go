@@ -14,6 +14,7 @@ const (
 	successPaymentRoute = "/success"
 	failPaymentRoute    = "/fail"
 	cancelPaymentRoute  = "/cancel"
+	getAllPaymentsRoute = "/get-all"
 )
 
 func RegisterPaymentRoutes(r chi.Router, handler *handlers.PaymentHandler, userUC usecase.UserUsecase) {
@@ -29,6 +30,13 @@ func RegisterPaymentRoutes(r chi.Router, handler *handlers.PaymentHandler, userU
 				models.RoleDoctor,
 			}))
 			r.Post(initPaymentRoute, handler.Init) // user initiates payment
+		})
+ 		// admin gets all payments
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.Auth(userUC, []string{
+				models.RoleAdmin,
+			}))
+			r.Get(getAllPaymentsRoute, handler.GetAll)
 		})
 
 		// SSLCommerz callback routes (public)

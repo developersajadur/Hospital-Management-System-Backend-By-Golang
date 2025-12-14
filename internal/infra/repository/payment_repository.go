@@ -8,6 +8,7 @@ import (
 
 type PaymentRepository interface {
 	Create(payment *models.Payment) error
+	GetAll() ([]models.Payment, error)
 	GetByTranID(tranID string) (*models.Payment, error)
 	Update(payment *models.Payment) error
 }
@@ -32,4 +33,10 @@ func (r *paymentRepository) GetByTranID(tranID string) (*models.Payment, error) 
 
 func (r *paymentRepository) Update(payment *models.Payment) error {
 	return r.db.Save(payment).Error
+}
+
+func (r *paymentRepository) GetAll() ([]models.Payment, error) {
+		var payments []models.Payment
+	err := r.db.Find(&payments).Where("isDeleted = FALSE").Error
+	return payments, err
 }
